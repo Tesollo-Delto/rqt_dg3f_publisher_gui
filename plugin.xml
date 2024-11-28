@@ -1,0 +1,20 @@
+<!-- <library path="lib/libdelto_rqt"> -->
+<library path="rqt_dg3f_publisher">
+  <class name="RqtDelto3FPublisher" type="rqt_dg3f_publisher.rqt_dg3f_publisher.RqtDelto3FPublisher" base_class_type="rqt_gui_py::Plugin">
+    <description>rqt GUI plugin to visualize dot graphs.</description>
+    <qtgui>
+      <group>
+        <icon type="file">resource/icon.png</icon>
+        <label>Delto Gripper</label>
+      </group>
+      <!-- subgroup, i'm not sure it's needed yet.
+      <group>
+        <label>ROS 2 Planning System</label>
+      </group>
+      -->
+      <label>rqt dg3f publisher</label>
+      <icon type="file">resource/icon.png</icon>
+      <statustip>rqt dg3f publisher</statustip>
+    </qtgui>
+  </class>
+</library>

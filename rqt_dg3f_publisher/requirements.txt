@@ -1,0 +1,7 @@
+ament_index_python==1.4.0
+matplotlib==3.5.1
+python_qt_binding==1.1.2
+rqt_gui==1.1.7
+rqt_gui_py==1.1.7
+sensor_msgs==4.2.3
+std_msgs==4.2.3

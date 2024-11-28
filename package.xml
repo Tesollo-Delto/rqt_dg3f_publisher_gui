@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rqt_dg3f_publisher</name>
+  <version>0.0.1</version>
+  <description>
+    This package provides a ROS2 plugin for the rqt framework to publish messages to the dg3f topic. It includes dependencies for rqt_gui, rqt_gui_py, and python_qt_binding, and is designed to facilitate the development and testing of ROS2 applications that require interaction with the dg3f topic.
+  </description>
+  <maintainer email="khc@tesollo.com">hong</maintainer>
+  <license>BSD</license>
+
+  <depend>rqt_gui</depend>
+  <depend>rqt_gui_py</depend>
+  <depend>python_qt_binding</depend>
+  <depend>std_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-pyside2</exec_depend>
+  <exec_depend>python3-qt5-bindings</exec_depend>
+
+
+  <!-- <exec_depend>python_qt_binding</exec_depend> -->
+  <!-- <exec_depend>delto_rqt</exec_depend> -->
+  <!-- <exec_depend>qt_gui_py_common</exec_depend> -->
+
+  <export>
+    <build_type>ament_python</build_type>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>
