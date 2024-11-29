@@ -13,34 +13,42 @@ from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QDialog
 from python_qt_binding.QtCore import Signal, QProcess
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget
 import matplotlib
 matplotlib.use('Qt5Agg')
-
+from concurrent.futures import ThreadPoolExecutor
+from queue import Queue
+import threading
 
 class JointPlot(FigureCanvas):
     def __init__(self, parent=None, title='Joint Plot'):
-        # ... existing initialization code ...
-        self.fig = Figure(figsize=(5, 4), dpi=100)
+        # 픽셀 단위로 정확한 크기 설정
+        width = 4
+        height = 3
+        dpi = 100
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
         super(JointPlot, self).__init__(self.fig)
+
+        # 고정된 크기 설정
+        self.setMinimumSize(width*dpi, height*dpi)
+        self.setMaximumSize(width*dpi, height*dpi)
 
         # 플롯 설정
         self.axes = self.fig.add_subplot(111)
         self.axes.set_title(title)
         self.axes.set_ylabel('Angle (deg)')
         self.axes.grid(True)
-
-        # x축 숨기기
         self.axes.xaxis.set_visible(False)
+
+        # 플롯 여백 조정
+        self.fig.tight_layout(pad=1.5)
 
         # 데이터 초기화
         self.data_points = 100
         self.time_data = list(range(self.data_points))
-        self.joint_data = [[] for _ in range(4)]
-        self.target_data = [[] for _ in range(4)]
-
-        for i in range(4):
-            self.joint_data[i] = [0] * self.data_points
-            self.target_data[i] = [0] * self.data_points
+        self.joint_data = [[0] * self.data_points for _ in range(4)]
+        self.target_data = [[0] * self.data_points for _ in range(4)]
 
         # 라인 초기화
         self.lines = []
@@ -49,66 +57,66 @@ class JointPlot(FigureCanvas):
         labels = ['Joint 1', 'Joint 2', 'Joint 3', 'Joint 4']
 
         for i in range(4):
-            # 실제 joint 값을 위한 실선
             line, = self.axes.plot(self.time_data, self.joint_data[i],
-                                   colors[i], label=labels[i])
+                                 colors[i], label=labels[i],
+                                 linewidth=1.5)
             self.lines.append(line)
-
-            # target joint 값을 위한 점선
             target_line, = self.axes.plot(self.time_data, self.target_data[i],
-                                          colors[i], linestyle='--',
-                                          label=f'{labels[i]} Target')
+                                        colors[i], linestyle='--',
+                                        label=f'{labels[i]} Target',
+                                        linewidth=1.5, dashes=(4, 2))
             self.target_lines.append(target_line)
 
-        self.axes.legend(loc='upper right')
-        self.axes.set_ylim([-90, 90])
-
-        # 레이아웃 조정
-        self.fig.tight_layout()
-        
         self.axes.legend(
             loc='upper right',
-            prop={'size': 8},  # 폰트 크기 축소
-            ncol=2,  # 열 수를 2로 설정하여 가로로 배치
-            bbox_to_anchor=(1, 1),  # 위치 미세 조정
-            framealpha=0.8,  # 배경 투명도 설정
-            frameon=True,  # 테두리 표시
+            prop={'size': 8},
+            ncol=2,
+            bbox_to_anchor=(0.98, 0.98),
+            framealpha=0.8,
+            frameon=True,
         )
-        # 부모 위젯에 추가
+        
+        self.axes.set_ylim([-90, 90])
+
+        # 백그라운드 초기화
+        self.draw()
+        self.background = self.fig.canvas.copy_from_bbox(self.fig.bbox)
+        
+        # 업데이트 제한을 위한 카운터
+        self.update_counter = 0
+        self.update_limit = 2
+
         if parent:
-            layout = parent.layout()
-            if layout is not None:
-                layout.addWidget(self)
-                
-        # Add these lines after initialization
-        self.draw_idle_enabled = True
-        self.fig.canvas.draw()
-        self.background = self.fig.canvas.copy_from_bbox(self.axes.bbox)
+            self.setParent(parent)
 
     def update_plot(self, new_joint_data, new_target_data):
         try:
-            # Update data
+            # 데이터 업데이트
             for i in range(4):
                 self.joint_data[i] = self.joint_data[i][1:] + [new_joint_data[i]]
-                self.lines[i].set_ydata(self.joint_data[i])
-                
                 self.target_data[i] = self.target_data[i][1:] + [new_target_data[i]]
+                self.lines[i].set_ydata(self.joint_data[i])
                 self.target_lines[i].set_ydata(self.target_data[i])
             
-            # Restore background
-            self.fig.canvas.restore_region(self.background)
-            
-            # Redraw just the lines
-            for line in self.lines + self.target_lines:
-                self.axes.draw_artist(line)
-            
-            # Update the display
-            self.fig.canvas.blit(self.axes.bbox)
-            self.fig.canvas.flush_events()
-            
+            # 카운터 증가 및 업데이트 제한
+            self.update_counter += 1
+            if self.update_counter >= self.update_limit:
+                self.update_counter = 0
+                
+                # 백그라운드 복원
+                self.fig.canvas.restore_region(self.background)
+                
+                # 라인 다시 그리기
+                for line in self.target_lines:
+                    self.axes.draw_artist(line)
+                for line in self.lines:
+                    self.axes.draw_artist(line)
+                
+                # 변경된 영역 업데이트
+                self.fig.canvas.blit(self.fig.bbox)
+                
         except Exception as e:
             print(f"Error updating plot: {e}")
-
 
 class RqtDelto3FPublisher(Plugin):
     joint_signal = Signal(list)
